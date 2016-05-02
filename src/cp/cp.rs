@@ -3,79 +3,48 @@
 /*
  * This file is part of the uutils coreutils package.
  *
+ * (c) Kevin Zander <veratil@gmail.com>
  * (c) Jordy Dickinson <jordy.dickinson@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE file
  * that was distributed with this source code.
  */
 
-extern crate getopts;
-
 #[macro_use]
 extern crate uucore;
 
-use getopts::Options;
-use std::fs;
-use std::io::{ErrorKind, Result, Write};
-use std::path::Path;
-use uucore::fs::{canonicalize, CanonicalizeMode};
+/*
+  getopts was decided not to be used since it could not handle the 3 option
+    recursive flag: -r -R --recursive
+  argparse I can't use since it doesn't support --cmd=something support
+  Rolling my own parser isn't too hard, just the sheer size of options
+ */
 
-#[derive(Clone, Eq, PartialEq)]
-pub enum Mode {
-    Copy,
-    Help,
-    Version,
-}
+use common::{Mode};
 
-static NAME: &'static str = "cp";
-static VERSION: &'static str = env!("CARGO_PKG_VERSION");
+mod parser;
+mod common;
+
+//use std::fs;
+//use std::io::{ErrorKind, Result, Write};
+//use std::path::Path;
+//use uucore::fs::{canonicalize, CanonicalizeMode};
 
 pub fn uumain(args: Vec<String>) -> i32 {
-    let mut opts = Options::new();
+    let mut opts: Mode = Mode::new();
 
-    opts.optflag("h", "help", "display this help and exit");
-    opts.optflag("", "version", "output version information and exit");
 
-    let matches = match opts.parse(&args[1..]) {
-        Ok(m) => m,
-        Err(e) => {
-            show_error!("{}", e);
-            panic!()
-        },
-    };
+    parser::parse_args(args, &mut opts);
 
-    let usage = opts.usage("Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY.");
-    let mode = if matches.opt_present("version") {
-        Mode::Version
-    } else if matches.opt_present("help") {
-        Mode::Help
-    } else {
-        Mode::Copy
-    };
+    println!("{:?}", opts);
 
-    match mode {
-        Mode::Copy    => copy(matches),
-        Mode::Help    => help(&usage),
-        Mode::Version => version(),
-    }
+    //copy(opts);
 
     0
-}
+} // uumain()
 
-fn version() {
-    println!("{} {}", NAME, VERSION);
-}
 
-fn help(usage: &str) {
-    let msg = format!("{0} {1}\n\n\
-                       Usage: {0} SOURCE DEST\n  \
-                         or:  {0} SOURCE... DIRECTORY\n  \
-                         or:  {0} -t DIRECTORY SOURCE\n\
-                       \n\
-                       {2}", NAME, VERSION, usage);
-    println!("{}", msg);
-}
-
+/*
 fn copy(matches: getopts::Matches) {
     let sources: Vec<String> = if matches.free.is_empty() {
         show_error!("Missing SOURCE argument. Try --help.");
@@ -154,3 +123,4 @@ pub fn paths_refer_to_same_file(p1: &Path, p2: &Path) -> Result<bool> {
 
     Ok(pathbuf1 == pathbuf2)
 }
+*/

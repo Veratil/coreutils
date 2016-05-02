@@ -1,14 +1,13 @@
 [package]
 name = "cp"
-version = "0.0.1"
-authors = []
+version = "0.0.2"
+authors = ["Jordy Dickinson", "Kevin Zander"]
 
 [lib]
 name = "uu_cp"
 path = "cp.rs"
 
 [dependencies]
-getopts = "*"
 libc = "*"
 uucore = { path="../uucore" }
 
