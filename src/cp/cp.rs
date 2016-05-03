@@ -34,9 +34,11 @@ pub fn uumain(args: Vec<String>) -> i32 {
     let mut opts: Mode = Mode::new();
 
 
-    parser::parse_args(args, &mut opts);
+    let (ret, sdargs) = parser::parse_args(args, &mut opts);
 
     println!("{:?}", opts);
+    println!("{:?}", ret);
+    println!("{:?}", sdargs);
 
     //copy(opts);
 

@@ -73,6 +73,9 @@ pub enum ReflinkWhen {
     always, // default
     auto,
 }
+pub static REFLINK_OPTIONS: &'static str =
+r#"  - 'always'
+  - 'auto'"#;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[allow(non_camel_case_types)]
@@ -81,6 +84,10 @@ pub enum SparseWhen {
     auto, // default
     never,
 }
+pub static SPARSE_OPTIONS: &'static str =
+r#"  - 'always'
+  - 'auto'
+  - 'never'"#;
 
 #[derive(Debug)]
 pub struct Mode {
