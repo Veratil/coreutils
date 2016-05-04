@@ -36,6 +36,10 @@ pub fn uumain(args: Vec<String>) -> i32 {
 
     let (ret, sdargs) = parser::parse_args(args, &mut opts);
 
+    if ret != 0 || sdargs.is_none() {
+        return ret;
+    }
+
     println!("{:?}", opts);
     println!("{:?}", ret);
     println!("{:?}", sdargs);

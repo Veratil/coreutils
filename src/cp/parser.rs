@@ -57,6 +57,12 @@ pub fn parse_args(args: Vec<String>, mut opts: &mut Mode) -> (i32, Option<Vec<St
                 if arg == "-S" || arg == "-t" {
                     // One flag
                     argarg = arg[1..].to_string();
+                    if argp+1 >= args.len() {
+                        // special case error
+                        print_missing_argument(argarg.as_str());
+                        print_cp_help();
+                        return (1, None);
+                    }
                     argopt = Some(args[argp+1].clone());
                     argp = argp + 1; // skip over next arg
                 }
@@ -97,6 +103,11 @@ pub fn parse_args(args: Vec<String>, mut opts: &mut Mode) -> (i32, Option<Vec<St
         }
         argp = argp + 1;
     } // loop
+    if argp >= args.len() {
+        print_missing_files();
+        print_cp_help();
+        return (1, None);
+    }
     (0, Some(args[argp..].to_vec()))
 }
 
@@ -275,6 +286,16 @@ fn parse_argument(arg: String, argopt: Option<String>, opts: &mut Mode) -> i32 {
     }
     0
 } // parse_argument
+
+fn print_missing_files() {
+    println!("{0}: missing file operand",
+        std::env::args().nth(0).unwrap());
+}
+
+fn print_missing_argument(forarg: &str) {
+    println!("{0}: option requires an argument -- '{1}'",
+        std::env::args().nth(0).unwrap(), forarg);
+}
 
 fn print_bad_argument(badt: &str, arg: &str, forarg: &str, explain: &str) {
     println!("{0}: {1} argument '{2}' for '{3}'\nValid arguments are:\n{4}",
