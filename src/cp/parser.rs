@@ -1,6 +1,7 @@
 
-use common::{BackupMethod, ReflinkWhen, SparseWhen, PreserveAttributes, Mode};
-use common::{BACKUP_OPTIONS, PRESERVE_OPTIONS, REFLINK_OPTIONS, SPARSE_OPTIONS, VERSION};
+use common::*;
+//use common::{BackupMethod, ReflinkWhen, SparseWhen, PreserveAttributes, Mode};
+//use common::{BACKUP_OPTIONS, PRESERVE_OPTIONS, REFLINK_OPTIONS, SPARSE_OPTIONS, VERSION};
 use std;
 
 // This is for exploding possible combined single flags (e.g. -dRba)
@@ -287,46 +288,3 @@ fn parse_argument(arg: String, argopt: Option<String>, opts: &mut Mode) -> i32 {
     0
 } // parse_argument
 
-fn print_missing_files() {
-    println!("{0}: missing file operand",
-        std::env::args().nth(0).unwrap());
-}
-
-fn print_missing_argument(forarg: &str) {
-    println!("{0}: option requires an argument -- '{1}'",
-        std::env::args().nth(0).unwrap(), forarg);
-}
-
-fn print_bad_argument(badt: &str, arg: &str, forarg: &str, explain: &str) {
-    println!("{0}: {1} argument '{2}' for '{3}'\nValid arguments are:\n{4}",
-        std::env::args().nth(0).unwrap(), badt, arg, forarg, explain);
-}
-
-fn print_ambiguous_argument(ambarg: &str, forarg: &str, explain: &str) {
-    print_bad_argument("ambiguous", ambarg, forarg, explain);
-}
-
-fn print_invalid_argument(invarg: &str, forarg: &str, explain: &str) {
-    print_bad_argument("invalid", invarg, forarg, explain);
-}
-
-fn print_cp_help() {
-    println!("Try '{0} --help' for more information.", std::env::args().nth(0).unwrap());
-}
-
-fn print_version() {
-    println!("{} {}", std::env::args().nth(0).unwrap(), VERSION);
-}
-
-fn print_help() {
-    let msg = format!(
-r#"Usage: {0} [OPTION]... [-T] SOURCE DEST
-  or:  {0} [OPTION]... SOURCE... DIRECTORY
-  or:  {0} [OPTION]... -t DIRECTORY SOURCE...
-Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY.
-
-Mandatory arguments to long options are mandatory for short options too.
-TODO: WRITE ARGUMENT TEXT"#,
-        std::env::args().nth(0).unwrap());
-    println!("{}", msg);
-}

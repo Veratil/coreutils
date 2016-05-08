@@ -1,4 +1,6 @@
 
+use std;
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[allow(non_camel_case_types)]
 pub enum BackupMethod {
@@ -185,3 +187,52 @@ impl Mode {
 pub static VERSION: &'static str = env!("CARGO_PKG_VERSION");
 //static AUTHORS: [&'static str; 2] = ["Jordy Dickinson", "Kevin Zander"];
 
+
+pub fn print_missing_destination_file(file: &str) {
+    println!("{0}: missing destination file operand after '{1}'",
+        std::env::args().nth(0).unwrap(), file);
+}
+
+pub fn print_missing_files() {
+    println!("{0}: missing file operand",
+        std::env::args().nth(0).unwrap());
+}
+
+pub fn print_missing_argument(forarg: &str) {
+    println!("{0}: option requires an argument -- '{1}'",
+        std::env::args().nth(0).unwrap(), forarg);
+}
+
+pub fn print_bad_argument(badt: &str, arg: &str, forarg: &str, explain: &str) {
+    println!("{0}: {1} argument '{2}' for '{3}'\nValid arguments are:\n{4}",
+        std::env::args().nth(0).unwrap(), badt, arg, forarg, explain);
+}
+
+pub fn print_ambiguous_argument(ambarg: &str, forarg: &str, explain: &str) {
+    print_bad_argument("ambiguous", ambarg, forarg, explain);
+}
+
+pub fn print_invalid_argument(invarg: &str, forarg: &str, explain: &str) {
+    print_bad_argument("invalid", invarg, forarg, explain);
+}
+
+pub fn print_cp_help() {
+    println!("Try '{0} --help' for more information.", std::env::args().nth(0).unwrap());
+}
+
+pub fn print_version() {
+    println!("{} {}", std::env::args().nth(0).unwrap(), VERSION);
+}
+
+pub fn print_help() {
+    let msg = format!(
+r#"Usage: {0} [OPTION]... [-T] SOURCE DEST
+  or:  {0} [OPTION]... SOURCE... DIRECTORY
+  or:  {0} [OPTION]... -t DIRECTORY SOURCE...
+Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY.
+
+Mandatory arguments to long options are mandatory for short options too.
+TODO: WRITE ARGUMENT TEXT"#,
+        std::env::args().nth(0).unwrap());
+    println!("{}", msg);
+}
