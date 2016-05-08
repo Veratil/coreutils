@@ -107,6 +107,7 @@ pub struct Mode {
     pub copy_real_file:         bool,               // -H
     // overrides previous -n option
     pub interactive:            bool,               // -i, --interactive
+    // not compatible with -s or --symbolic-link
     pub copy_as_hardlink:       bool,               // -l, --link
     pub dereference:            bool,               // -L, --dereference
     // overrides previous -i option
@@ -129,6 +130,7 @@ pub struct Mode {
     pub sparse:                 bool,               // --sparse=when
     pub sparse_when:            SparseWhen,         // default auto
     pub strip_trailing_slashes: bool,               // --strip-trailing-slashes
+    // not compatible with -l or --link
     pub symbolic_link:          bool,               // -s, --symbolic-link
     pub suffix:                 String,             // -S suffix, --suffix=suffix
     // -t and -T are mutually exclusive

@@ -153,7 +153,14 @@ fn parse_argument(arg: String, argopt: Option<String>, opts: &mut Mode) -> i32 {
         "f" | "force" => opts.force = true,
         "H" => opts.copy_real_file = true,
         "i" | "interactive" => opts.interactive = true,
-        "l" | "link" => opts.copy_as_hardlink = true,
+        "l" | "link" => {
+            if opts.symbolic_link {
+                println!("{0}: cannot make both hard and symbolic links",
+                    std::env::args().nth(0).unwrap());
+                return -2;
+            }
+            opts.copy_as_hardlink = true;
+        }
         "L" | "dereference" => opts.dereference = true,
         "n" | "no-clobber" => {
             // Check if -b --backup has been set, quit if so
@@ -256,7 +263,14 @@ fn parse_argument(arg: String, argopt: Option<String>, opts: &mut Mode) -> i32 {
             }
         }
         "strip-trailing-slashes" => opts.strip_trailing_slashes = true,
-        "s" | "symbolic-link" => opts.symbolic_link = true,
+        "s" | "symbolic-link" => {
+            if opts.copy_as_hardlink {
+                println!("{0}: cannot make both hard and symbolic links",
+                    std::env::args().nth(0).unwrap());
+                return -2;
+            }
+            opts.symbolic_link = true;
+        }
         "S" | "suffix" => opts.suffix = argopt.unwrap(),
         "t" | "target-directory" => {
             if opts.no_target_directory {
