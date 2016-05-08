@@ -20,7 +20,7 @@ extern crate uucore;
   Rolling my own parser isn't too hard, just the sheer size of options
  */
 
-use common::{Mode};
+use common::*;
 
 mod parser;
 mod common;
@@ -37,19 +37,46 @@ pub fn uumain(args: Vec<String>) -> i32 {
     let (ret, sdargs) = parser::parse_args(args, &mut opts);
 
     if ret != 0 || sdargs.is_none() {
+        println!("{:?}", ret);
         return ret;
     }
 
     println!("{:?}", opts);
     println!("{:?}", ret);
     println!("{:?}", sdargs);
+    println!("");
 
-    //copy(opts);
-
-    0
+    copy(sdargs.unwrap(), &opts)
 } // uumain()
 
-
+fn copy(files: Vec<String>, opts: &Mode) -> i32 {
+    if files.len() < 2 {
+        print_missing_destination_file(&files[0]);
+        print_cp_help();
+        return 1;
+    }
+    /*
+    Usage: cp [OPTION]... [-T] SOURCE DEST
+      or:  cp [OPTION]... SOURCE... DIRECTORY
+      or:  cp [OPTION]... -t DIRECTORY SOURCE...
+    Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY.
+    */
+    // (3rd usage) do we have a -t DIRECTORY defined?
+    if opts.target_directory.len() > 0 {
+        println!("Copying {:?} to directory {}", files, opts.target_directory);
+    }
+    // (1st usage) two names only
+    else if files.len() == 2 { 
+        println!("Copy {} to {}", files[0], files[1]);
+    }
+    // (2nd usage) multiple sources to one directory
+    else {
+        // remember slices are [inclusive..exclusive)
+        println!("Copying {:?} to directory {}", files[0..files.len()-1].to_vec(), files[files.len()-1]);
+    }
+    // just return 1 for now
+    1
+}
 /*
 fn copy(matches: getopts::Matches) {
     let sources: Vec<String> = if matches.free.is_empty() {
