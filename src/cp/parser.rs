@@ -34,8 +34,8 @@ pub fn parse_args(args: Vec<String>, mut opts: &mut Mode) -> (i32, Option<Vec<St
     loop {
         if argp >= args.len() { break; }
         let arg = &args[argp];
-        if      arg == "--help" { print_help(); return (-1, None); }
-        else if arg == "--version" { print_version(); return (-1, None); }
+        if      arg == "--help" { print_help(); return (0, None); }
+        else if arg == "--version" { print_version(); return (0, None); }
         else {
             let argarg: String;
             let argopt: Option<String>;
