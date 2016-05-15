@@ -43,7 +43,6 @@ fn preparse_args(args: Vec<String>, long_opts: &Vec<Argument>) -> Vec<String> {
         } // if arg.starts_with("-")
         newargs.push(arg.clone());
     }
-    println!("{:?}", newargs);
     newargs
 }
 
@@ -125,7 +124,7 @@ pub fn parse_args(args: Vec<String>, long_opts: &Vec<Argument>, mut opts: &mut C
                 0 => { }
                 // invalid option given
                 -1 => {
-                    println!("{0}: invalid option -- '{1}'", args[0], arg);
+                    print_cp_error(format!("invalid option -- '{}'", arg).as_str());
                     print_cp_help();
                     return (1, None);
                 }
@@ -177,8 +176,7 @@ fn parse_argument(arg: String, argopt: Option<String>, opts: &mut CpOptions) -> 
             opts.make_backups = true;
             // Check if -n --no-clobber has been set, quit if so
             if opts.interactive == Interactive::AlwaysNo {
-                println!("{0}: options --backup and --no-clobber are mutually exclusive",
-                    std::env::args().nth(0).unwrap());
+                print_cp_error("options --backup and --no-clobber are mutually exclusive");
                 return -2;
             }
             opts.backup_type = if argopt.is_some() {
@@ -216,8 +214,7 @@ fn parse_argument(arg: String, argopt: Option<String>, opts: &mut CpOptions) -> 
         "i" | "interactive" => opts.interactive = Interactive::AskUser,
         "l" | "link" => {
             if opts.symbolic_link {
-                println!("{0}: cannot make both hard and symbolic links",
-                    std::env::args().nth(0).unwrap());
+                print_cp_error("cannot make both hard and symbolic links");
                 return -2;
             }
             opts.hard_link = true;
@@ -226,8 +223,7 @@ fn parse_argument(arg: String, argopt: Option<String>, opts: &mut CpOptions) -> 
         "n" | "no-clobber" => {
             // Check if -b --backup has been set, quit if so
             if opts.make_backups {
-                println!("{0}: options --backup and --no-clobber are mutually exclusive",
-                    std::env::args().nth(0).unwrap());
+                print_cp_error("options --backup and --no-clobber are mutually exclusive");
                 return -2;
             }
             opts.interactive = Interactive::AlwaysNo;
@@ -368,8 +364,7 @@ fn parse_argument(arg: String, argopt: Option<String>, opts: &mut CpOptions) -> 
         "strip-trailing-slashes" => opts.remove_trailing_slashes = true,
         "s" | "symbolic-link" => {
             if opts.hard_link {
-                println!("{0}: cannot make both hard and symbolic links",
-                    std::env::args().nth(0).unwrap());
+                print_cp_error("cannot make both hard and symbolic links");
                 return -2;
             }
             opts.symbolic_link = true;
@@ -380,13 +375,11 @@ fn parse_argument(arg: String, argopt: Option<String>, opts: &mut CpOptions) -> 
         }
         "t" | "target-directory" => {
             if opts.target_directory.len() > 0 {
-                println!("{0}: multiple target directories specified",
-                    std::env::args().nth(0).unwrap());
+                print_cp_error("multiple target directories specified");
                 return -3;
             }
             if opts.no_target_directory {
-                println!("{0}: cannot combine --target-directory (-t) and --no-target-directory (-T)",
-                    std::env::args().nth(0).unwrap());
+                print_cp_error("cannot combine --target-directory (-t) and --no-target-directory (-T)");
                 return -3;
             }
             // TODO: Test if target is real directory
@@ -394,8 +387,7 @@ fn parse_argument(arg: String, argopt: Option<String>, opts: &mut CpOptions) -> 
         }
         "T" | "no-target-directory" => {
             if opts.target_directory.len() > 0 {
-                println!("{0}: cannot combine --target-directory (-t) and --no-target-directory (-T)",
-                    std::env::args().nth(0).unwrap());
+                print_cp_error("cannot combine --target-directory (-t) and --no-target-directory (-T)");
                 return -3;
             }
             opts.no_target_directory = true;
@@ -405,12 +397,14 @@ fn parse_argument(arg: String, argopt: Option<String>, opts: &mut CpOptions) -> 
         "x" | "one-file-system" => opts.one_file_system = true,
         "Z" | "context" => {
             // FIXME: Detect selinux
-            if argopt.is_some() {
+            /*if argopt.is_some() {
                 opts.scontext = argopt.unwrap();
             }
             else {
                 opts.set_security_context = true;
-            }
+            }*/
+            print_cp_error("SELinux support is currently unavailable");
+            return -3;
         }
         
         _ => { return -1; }

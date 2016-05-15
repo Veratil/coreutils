@@ -249,23 +249,20 @@ pub static VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 
 pub fn print_missing_destination_file(file: &str) {
-    println!("{0}: missing destination file operand after '{1}'",
-        std::env::args().nth(0).unwrap(), file);
+    print_cp_error(format!("missing destination file operand after '{}'", file).as_str());
 }
 
 pub fn print_missing_files() {
-    println!("{0}: missing file operand",
-        std::env::args().nth(0).unwrap());
+    print_cp_error("missing file operand");
 }
 
 pub fn print_missing_argument(forarg: &str) {
-    println!("{0}: option requires an argument -- '{1}'",
-        std::env::args().nth(0).unwrap(), forarg);
+    print_cp_error(format!("option requires an argument -- '{}'", forarg).as_str());
 }
 
 pub fn print_bad_argument(badt: &str, arg: &str, forarg: &str, explain: &str) {
-    println!("{0}: {1} argument '{2}' for '{3}'\nValid arguments are:\n{4}",
-        std::env::args().nth(0).unwrap(), badt, arg, forarg, explain);
+    print_cp_error(format!("{} argument '{}' for '{}'\nValid arguments are:\n{}",
+        badt, arg, forarg, explain).as_str());
 }
 
 pub fn print_ambiguous_argument(ambarg: &str, forarg: &str, explain: &str) {
@@ -274,6 +271,10 @@ pub fn print_ambiguous_argument(ambarg: &str, forarg: &str, explain: &str) {
 
 pub fn print_invalid_argument(invarg: &str, forarg: &str, explain: &str) {
     print_bad_argument("invalid", invarg, forarg, explain);
+}
+
+pub fn print_cp_error(msg: &str) {
+    println!("{0}: {1}", std::env::args().nth(0).unwrap(), msg);
 }
 
 pub fn print_cp_help() {
