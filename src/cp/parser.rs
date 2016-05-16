@@ -1,6 +1,5 @@
 
 use common::*;
-use std;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ArgumentType {
@@ -146,7 +145,7 @@ pub fn parse_args(args: Vec<String>, long_opts: &Vec<Argument>, mut opts: &mut C
         argp = argp + 1;
     } // loop
     if argp >= args.len() {
-        print_missing_files();
+        print_cp_error("missing file operand");
         print_cp_help();
         return (1, None);
     }

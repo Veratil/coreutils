@@ -248,14 +248,6 @@ pub static VERSION: &'static str = env!("CARGO_PKG_VERSION");
 //static AUTHORS: [&'static str; 2] = ["Jordy Dickinson", "Kevin Zander"];
 
 
-pub fn print_missing_destination_file(file: &str) {
-    print_cp_error(format!("missing destination file operand after '{}'", file).as_str());
-}
-
-pub fn print_missing_files() {
-    print_cp_error("missing file operand");
-}
-
 pub fn print_missing_argument(forarg: &str) {
     print_cp_error(format!("option requires an argument -- '{}'", forarg).as_str());
 }
