@@ -8,6 +8,8 @@
  *
  * For the full copyright and license information, please view the LICENSE file
  * that was distributed with this source code.
+ *
+ * Code derived from coreutils itself.
  */
 
 #[macro_use]
@@ -26,9 +28,9 @@ use parser::*;
 mod parser;
 mod common;
 
-//use std::fs;
+use std::fs::File;
 //use std::io::{ErrorKind, Result, Write};
-//use std::path::Path;
+use std::path::Path;
 //use uucore::fs::{canonicalize, CanonicalizeMode};
 
 pub fn uumain(args: Vec<String>) -> i32 {
@@ -67,15 +69,14 @@ pub fn uumain(args: Vec<String>) -> i32 {
 
     let (ret, sdargs) = parser::parse_args(args, &long_opts, &mut opts);
 
-    if ret != 0 || sdargs.is_none() {
-        println!("{:?}", ret);
+    if ret != 0 /*|| sdargs.is_none()*/ {
+        //println!("{:?}", ret);
         return ret;
     }
 
     // Post-parse CpOptions for conflicts and option combinations
     if opts.reflink_mode == ReflinkType::Always && opts.sparse_mode != SparseType::Auto {
-        println!("{0}: --reflink can be used only with --sparse=auto",
-            std::env::args().nth(0).unwrap());
+        print_cp_error("--reflink can be used only with --sparse=auto");
         print_cp_help();
         return 1;
     }
@@ -97,8 +98,7 @@ pub fn uumain(args: Vec<String>) -> i32 {
         opts.preserve.security_context = false;
     }
     if opts.preserve.security_context && (opts.set_security_context || opts.scontext.len() > 0) {
-        println!("{0}: cannot set target context and preserve it",
-            std::env::args().nth(0).unwrap());
+        print_cp_error("cannot set target context and preserve it");
         print_cp_help();
         return 1;
     }
@@ -115,25 +115,41 @@ pub fn uumain(args: Vec<String>) -> i32 {
     }*/
 
     println!("{:?}", opts);
-    println!("{:?}", ret);
     println!("{:?}", sdargs);
     println!("");
 
-    copy(sdargs.unwrap(), &opts)
+    copy(sdargs.unwrap(), &mut opts)
 } // uumain()
 
-fn copy(files: Vec<String>, opts: &CpOptions) -> i32 {
+fn copy(mut files: Vec<String>, mut opts: &mut CpOptions) -> i32 {
     if files.len() < 2 {
-        print_missing_destination_file(&files[0]);
+        print_cp_error(format!("missing destination file operand after '{}'", &files[0]).as_str());
         print_cp_help();
         return 1;
     }
+    if opts.no_target_directory {
+        if files.len() > 2 {
+            print_cp_error(format!("extra operand '{}'", files[2]).as_str());
+            print_cp_help();
+            return 1;
+        }
+        if target_directory_operand(&files[files.len()-1]) < 0 {
+            return 1;
+        }
+    }
+    // when >=2 files && -t not set
+    else if opts.target_directory.len() == 0 {
+        // if >=2 files and last file is a directory
+        if files.len() >= 2 && target_directory_operand(&files[files.len()-1]) == 1 {
+            opts.target_directory = files.pop().unwrap();
+        }
+        // last file not a directory and >2 arguments
+        else if files.len() > 2 {
+            print_cp_error(format!("target '{}' is not a directory", &files[files.len()-1]).as_str());
+            return 1;
+        }
+    }
     /*
-    Usage: cp [OPTION]... [-T] SOURCE DEST
-      or:  cp [OPTION]... SOURCE... DIRECTORY
-      or:  cp [OPTION]... -t DIRECTORY SOURCE...
-    Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY.
-    */
     // (3rd usage) do we have a -t DIRECTORY defined?
     if opts.target_directory.len() > 0 {
         println!("Copying {:?} to directory {}", files, opts.target_directory);
@@ -146,9 +162,24 @@ fn copy(files: Vec<String>, opts: &CpOptions) -> i32 {
     else {
         // remember slices are [inclusive..exclusive)
         println!("Copying {:?} to directory {}", files[0..files.len()-1].to_vec(), files[files.len()-1]);
-    }
+    }*/
     // just return 1 for now
     1
+}
+
+// -1 - error
+//  0 - not a dir
+//  1 - is a dir
+fn target_directory_operand(file: &String, mut new_dst: &mut bool) -> i32 {
+    // FIXME: This needs to work differently, not Path, but stat()
+    let f = Path::new(file);
+    let is_a_dir: bool = f.is_dir();
+    // FIXME: if stat() returns -1 and !ENOENT then fail access, otherwise continue
+    if !f.exists() {
+        print_cp_error(format!("failed to access '{}'", file).as_str());
+        return -1;
+    }
+    if is_a_dir { 1 } else { 0 }
 }
 /*
 fn copy(matches: getopts::Matches) {
