@@ -373,6 +373,8 @@ fn parse_argument(arg: String, argopt: Option<String>, opts: &mut CpOptions) -> 
             opts.backup_suffix_string = argopt.unwrap();
         }
         "t" | "target-directory" => {
+            use std;
+            use std::error::Error;
             if opts.target_directory.len() > 0 {
                 print_cp_error("multiple target directories specified");
                 return -3;
@@ -381,8 +383,20 @@ fn parse_argument(arg: String, argopt: Option<String>, opts: &mut CpOptions) -> 
                 print_cp_error("cannot combine --target-directory (-t) and --no-target-directory (-T)");
                 return -3;
             }
-            // TODO: Test if target is real directory
             opts.target_directory = argopt.unwrap();
+            let st: std::io::Result<std::fs::Metadata> = std::fs::metadata(std::path::Path::new(&opts.target_directory));
+            match st {
+                Ok(m) => {
+                    if !m.is_dir() {
+                        print_cp_error(format!("target '{}' is not a directory", opts.target_directory).as_str());
+                        return -3;
+                    }
+                },
+                Err(e) => {
+                    print_cp_error(format!("failed to access '{}': {}", opts.target_directory, e.description()).as_str());
+                    return -3;
+                }
+            }
         }
         "T" | "no-target-directory" => {
             if opts.target_directory.len() > 0 {
