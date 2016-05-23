@@ -28,9 +28,11 @@ use parser::*;
 mod parser;
 mod common;
 
-use std::fs::File;
+//use std::fs::File;
 //use std::io::{ErrorKind, Result, Write};
 use std::path::Path;
+//use std::fs::Metadata;
+use std::os::linux::fs::MetadataExt;
 //use uucore::fs::{canonicalize, CanonicalizeMode};
 
 pub fn uumain(args: Vec<String>) -> i32 {
@@ -118,10 +120,15 @@ pub fn uumain(args: Vec<String>) -> i32 {
     println!("{:?}", sdargs);
     println!("");
 
-    copy(sdargs.unwrap(), &mut opts)
+    do_copy(sdargs.unwrap(), &mut opts)
 } // uumain()
 
-fn copy(mut files: Vec<String>, mut opts: &mut CpOptions) -> i32 {
+fn do_copy(mut files: Vec<String>, mut opts: &mut CpOptions) -> i32 {
+    let mut new_dst: bool = false;
+    let mut ok: bool = true;
+    // initialize sb with an error, will be (possibly) overwritten later
+    let mut sb: std::io::Result<std::fs::Metadata> =
+        Err(std::io::Error::new(std::io::ErrorKind::Other, "uninitialized"));
     if files.len() < 2 {
         print_cp_error(format!("missing destination file operand after '{}'", &files[0]).as_str());
         print_cp_help();
@@ -133,53 +140,176 @@ fn copy(mut files: Vec<String>, mut opts: &mut CpOptions) -> i32 {
             print_cp_help();
             return 1;
         }
-        if target_directory_operand(&files[files.len()-1]) < 0 {
+        // slight change from coreutils source, propagate error up
+        println!("no_target_dir");
+        if target_directory_operand(&files.last().unwrap(), &mut sb, &mut new_dst) < 0 {
             return 1;
         }
     }
     // when >=2 files && -t not set
     else if opts.target_directory.len() == 0 {
         // if >=2 files and last file is a directory
-        if files.len() >= 2 && target_directory_operand(&files[files.len()-1]) == 1 {
-            opts.target_directory = files.pop().unwrap();
+        if files.len() >= 2 {
+            if target_directory_operand(&files.last().unwrap(), &mut sb, &mut new_dst) != 1 {
+                return 1;
+            }
+            else {
+                opts.target_directory = files.pop().unwrap();
+            }
         }
         // last file not a directory and >2 arguments
         else if files.len() > 2 {
-            print_cp_error(format!("target '{}' is not a directory", &files[files.len()-1]).as_str());
+            print_cp_error(format!("target '{}' is not a directory", &files.last().unwrap()).as_str());
             return 1;
         }
     }
-    /*
-    // (3rd usage) do we have a -t DIRECTORY defined?
+
     if opts.target_directory.len() > 0 {
-        println!("Copying {:?} to directory {}", files, opts.target_directory);
+        if files.len() >= 2 {
+            // FIXME: hash table stuff?
+            println!("no targetdir, files >= 2");
+        }
+        for file in files {
+            let parents_exist: bool = true;
+            let mut arg_in_concat: String;
+            let mut dst_name: String;
+            if opts.remove_trailing_slashes {
+                // FIXME: Do we really need to do this if we use Path?
+                //strip_trailing_slahes(&file);
+                println!("remove trailing slashes");
+            }
+            if opts.parents_option {
+                //ASSIGN_STRDUPA(arg_no_trailing_slash,arg);
+                //let arg_no_trailing_slashes = arg.clone();
+                //strip_trailing_slashes(arg_no_trailing_slash);
+                // dst_name = ...
+                // parent_exists = ...
+                println!("parents options + parent_exists");
+                let pb_file = strip_trailing_slashes(&std::path::PathBuf::from(file).as_path());
+                //dst_name = file_name_concat(&opts.target_directory, pb_file.unwrap().to_str(), &arg_in_concat);
+            }
+            else {
+                //ASSIGN_BASENAME_STRDUPA
+                //dst_name = ...
+                println!("no parents options + dst_name");
+            }
+            if !parents_exist {
+                /* make_dir_parents_private failed, so don't even attempt copy */
+                ok = false;
+                println!("!parents_exist");
+            }
+            else {
+                //ok &=copy
+                println!("parents_exist copy");
+                if opts.parents_option {
+                    //ok &= re_protect
+                    println!("++ parents_option");
+                }
+            }
+            if opts.parents_option {
+                println!("parents_option 2 while");
+                //while attr_list {
+                    //}
+            }
+        } // for file in files
     }
-    // (1st usage) two names only
-    else if files.len() == 2 { 
-        println!("Copy {} to {}", files[0], files[1]);
-    }
-    // (2nd usage) multiple sources to one directory
     else {
-        // remember slices are [inclusive..exclusive)
-        println!("Copying {:?} to directory {}", files[0..files.len()-1].to_vec(), files[files.len()-1]);
-    }*/
+        let mut new_dest = String::new();
+        let source = files[0].clone();
+        let dest = files[1].clone();
+        if opts.parents_option {
+            print_cp_error("with --parents, the destination must be a directory");
+            print_cp_help();
+            return 1;
+        }
+        if opts.unlink_dest_after_failed_open
+            && opts.backup_type != BackupType::NoBackups
+            && source == dest
+            && !new_dst && (sb.is_ok() && S_ISREG(sb.unwrap().st_mode())) {
+            //new_dest = find_backup_file_name
+            // XXX: Why is a tmp made when it points to itself?
+            //x_tmp = *x
+            //x_tmp.backup_type = BackupType::NoBackups
+            //x = &x_tmp
+            println!("no idea");
+        }
+        else {
+            new_dest = dest.clone();
+            println!("new_dest = {}", new_dest);
+        }
+        //ok = copy(source,new_dest,0,x,&unused,NULL);
+        println!("ok = copy");
+    }
     // just return 1 for now
+    println!("ret");
     1
 }
 
 // -1 - error
 //  0 - not a dir
 //  1 - is a dir
-fn target_directory_operand(file: &String, mut new_dst: &mut bool) -> i32 {
-    // FIXME: This needs to work differently, not Path, but stat()
+fn target_directory_operand(file: &String, mut st: &mut std::io::Result<std::fs::Metadata>, mut new_dst: &mut bool) -> i32 {
     let f = Path::new(file);
-    let is_a_dir: bool = f.is_dir();
-    // FIXME: if stat() returns -1 and !ENOENT then fail access, otherwise continue
-    if !f.exists() {
-        print_cp_error(format!("failed to access '{}'", file).as_str());
-        return -1;
+    //let r = f.metadata();
+    *st = f.metadata(); // put the metadata result into st as well
+    let is_a_dir = f.is_dir();
+    println!("isadir: {}", is_a_dir);
+    match st.as_ref() {
+        Ok(_) => { },
+        Err(e) => {
+            //println!("Error: {}", e);
+            if e.kind() == std::io::ErrorKind::NotFound {
+                print_cp_error(format!("failed to access '{}': {}",
+                    f.file_name().unwrap().to_str().unwrap(), e).as_str());
+                return -1;
+            }
+            *new_dst = true;
+        }
     }
     if is_a_dir { 1 } else { 0 }
+}
+
+
+const S_IFMT: u32  = 0o0170000;
+const S_IFREG: u32 = 0o0100000;
+#[inline]
+#[allow(non_snake_case)]
+fn S_ISREG(m: u32) -> bool {
+    m & S_IFMT == S_IFREG
+}
+
+fn remove_duplicate_slashes(p: &std::path::Path) -> Option<std::path::PathBuf> {
+    let s = p.to_str();
+    match s {
+        Some(t) => {
+            let mut st: String = String::new();
+            let mut u: char = '\0';
+            for v in t.chars() {
+                if u == '/' && v == '/' {
+                    continue;
+                } else {
+                    u = v.clone();
+                    st.push(v);
+                }
+            }
+            Some(std::path::PathBuf::from(st))
+        }
+        None => None,
+    }
+}
+
+fn strip_trailing_slashes(p: &std::path::Path) -> Option<std::path::PathBuf> {
+    let s = p.to_str();
+    match s {
+        Some(t) => {
+            let mut st: String = String::from(t);
+            while st.ends_with("/") {
+                st = String::from(st[0..st.len()-2].to_string());
+            }
+            Some(std::path::PathBuf::from(st))
+        }
+        None => None
+    }
 }
 /*
 fn copy(matches: getopts::Matches) {
